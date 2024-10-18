@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الحصص غير المنجزة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            direction: rtl;
+            text-align: right;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .input-group input {
+            flex: 1;
+            margin-right: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .input-group input[name="teacherName[]"] {
+            flex: 4; 
+        }
+        .input-group input[name="department[]"] {
+            flex: 2;
+        }
+        .input-group input[name="teacherTime[]"] {
+            flex: 0.5; 
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .button-group button {
+            width: auto;
+            padding: 8px 12px;
+            margin: 0 5px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #exportJpegBtn {
+            background-color: #2196F3;
+        }
+        #exportJpegBtn:hover {
+            background-color: #1e87db;
+        }
+        #clearBtn {
+            background-color: #f44336;
+        }
+        #clearBtn:hover {
+            background-color: #d32f2f;
+        }
+        #saveBtn {
+            background-color: #ff9800;
+        }
+        #saveBtn:hover {
+            background-color: #e68a00;
+        }
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .add-remove-btn {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-remove-btn:hover {
+            background-color: #0056b3;
+        }
+        .note {
+            margin-top: 20px;
+            padding: 10px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .note p {
+            margin: 0;
+        }
+        .signature {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>الحصص غير المنجزة</h1>
+        <form id="unfinishedClassesForm">
+            <div id="teacherInputs">
+                <div class="input-group">
+                    <input type="text" name="teacherName[]" placeholder="اسم الأستاذ" required>
+                    <input type="text" name="department[]" placeholder="القسم" required>
+                    <input type="time" name="teacherTime[]" placeholder="التوقيت" required>
+                    <button type="button" class="add-remove-btn" onclick="addTeacherInput()">+</button>
+                </div>
+            </div>
+
+            <label for="date">التاريخ:</label>
+            <input type="date" id="date" required>
+
+            <label for="notes">الملاحظات:</label>
+            <textarea id="notes" rows="4" placeholder="أدخل ملاحظاتك هنا..."></textarea>
+
+            <label for="signature">إمضاء القيّم(ة):</label>
+            <input type="text" id="signature" placeholder="أدخل اسمك هنا...">
+
+            <div class="button-group">
+                <button type="button" id="exportJpegBtn" onclick="exportToJpeg()">التقرير</button>
+                <button type="button" id="clearBtn" onclick="clearFields()">إفراغ الحقول</button>
+                <button type="button" id="saveBtn" onclick="saveData()">حفظ</button>
+            </div>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        function addTeacherInput() {
+            const teacherInputs = document.getElementById('teacherInputs');
+            const lastInputGroup = teacherInputs.lastElementChild;
+            const lastTeacherTime = lastInputGroup.querySelector('input[name="teacherTime[]"]').value;
+
+            const newInput = document.createElement('div');
+            newInput.className = 'input-group';
+            newInput.innerHTML = `
+                <input type="text" name="teacherName[]" placeholder="اسم الأستاذ">
+                <input type="text" name="department[]" placeholder="القسم">
+                <input type="time" name="teacherTime[]" placeholder="التوقيت" value="${lastTeacherTime}">
+                <button type="button" class="add-remove-btn" onclick="removeTeacherInput(this)">-</button>
+                <button type="button" class="add-remove-btn" onclick="addTeacherInput()">+</button>
+            `;
+            teacherInputs.appendChild(newInput);
+        }
+
+        function removeTeacherInput(button) {
+            button.parentNode.remove();
+        }
+
+        function getFormData() {
+            const date = document.getElementById('date').value;
+            const notes = document.getElementById('notes').value;
+            const signature = document.getElementById('signature').value;
+            const teacherNames = document.querySelectorAll('input[name="teacherName[]"]');
+            const departments = document.querySelectorAll('input[name="department[]"]');
+            const teacherTimes = document.querySelectorAll('input[name="teacherTime[]"]');
+            let data = [];
+            for (let i = 0; i < teacherNames.length; i++) {
+                const teacherName = teacherNames[i].value;
+                const department = departments[i].value;
+                const teacherTime = teacherTimes[i].value;
+                if (teacherName && department && teacherTime) {
+                    data.push([teacherName, department, teacherTime]);
+                }
+            }
+            return { data, notes, signature, date };
+        }
+
+        function exportToJpeg() {
+            const { data, notes, signature, date } = getFormData();
+            const formattedDate = new Date(date).toLocaleDateString('ar-TN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            let content = `
+            <html lang="ar" dir="rtl">
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; direction: rtl; text-align: right; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 18px; }
+                    th, td { border: 1px solid #000; padding: 8px; text-align: center; }
+                    th { background-color: #f2f2f2; font-size: 20px; }
+                    h1 { text-align: center; font-size: 24px; font-weight: bold; }
+                    .large-text { font-size: 22px; font-weight: bold; }
+                    .note { margin-top: 20px; font-size: 18px; font-weight: bold; border: 2px solid #333; padding: 10px; border-radius: 4px; }
+                    .signature { margin-top: 20px; font-size: 24px; font-weight: bold; text-align: left; }
+                </style>
+            </head>
+            <body>
+                <h1>الحصص غير المنجزة</h1>
+                <p class="large-text">اليوم: ${formattedDate}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ع/ر</th>
+                            <th>الأساتذة</th>
+                            <th>الأقسام</th>
+                            <th>التوقيت</th>
+                            <th>ملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            data.forEach((row, index) => {
+                content += `
+                <tr>
+                    <td>${String(index + 1)}</td>
+                    <td>${row[0]}</td>
+                    <td>${row[1]}</td>
+                    <td>${row[2]}</td>
+                    <td></td>
+                </tr>`;
+            });
+
+            content += `
+                    </tbody>
+                </table>
+                <div class="note">
+                    <p>الملاحظات:</p>
+                    <p>${notes}</p>
+                </div>
+                <div class="signature">
+                    <p>إمضاء القيّم(ة):</p>
+                    <p>${signature}</p>
+                </div>
+            </body>
+            </html>`;
+
+            const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'الحصص غير المنجزة.html';
+            link.click();
+        }
+
+        function clearFields() {
+            document.getElementById('unfinishedClassesForm').reset();
+            document.getElementById('teacherInputs').innerHTML = `
+                <div class="input-group">
+                    <input type="text" name="teacherName[]" placeholder="اسم الأستاذ" required>
+                    <input type="text" name="department[]" placeholder="القسم" required>
+                    <input type="time" name="teacherTime[]" placeholder="التوقيت" required>
+                    <button type="button" class="add-remove-btn" onclick="addTeacherInput()">+</button>
+                </div>`;
+        }
+
+        function saveData() {
+            const formData = getFormData();
+            if (formData.data.length === 0) {
+                displayMessage('الرجاء ملء جميع الحقول', 'error');
+                return;
+            }
+            localStorage.setItem('unfinishedClassesData', JSON.stringify(formData));
+            displayMessage('تم حفظ البيانات بنجاح', 'success');
+        }
+
+        function loadSavedData() {
+            const savedData = localStorage.getItem('unfinishedClassesData');
+            if (savedData) {
+                const { data, notes, signature, date } = JSON.parse(savedData);
+                document.getElementById('date').value = date;
+                document.getElementById('notes').value = notes;
+                document.getElementById('signature').value = signature;
+
+                const teacherInputs = document.getElementById('teacherInputs');
+                teacherInputs.innerHTML = '';
+
+                data.forEach((row, index) => {
+                    const newInput = document.createElement('div');
+                    newInput.className = 'input-group';
+                    newInput.innerHTML = `
+                        <input type="text" name="teacherName[]" placeholder="اسم الأستاذ" value="${row[0]}" required>
+                        <input type="text" name="department[]" placeholder="القسم" value="${row[1]}" required>
+                        <input type="time" name="teacherTime[]" placeholder="التوقيت" value="${row[2]}" required>
+                        ${index === 0 ? 
+                            `<button type="button" class="add-remove-btn" onclick="addTeacherInput()">+</button>` : 
+                            `<button type="button" class="add-remove-btn" onclick="removeTeacherInput(this)">-</button>
+                            <button type="button" class="add-remove-btn" onclick="addTeacherInput()">+</button>`
+                        }
+                    `;
+                    teacherInputs.appendChild(newInput);
+                });
+
+                displayMessage('تم استرجاع البيانات المحفوظة', 'success');
+            }
+        }
+
+        function displayMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Load saved data when the page loads
+        window.onload = loadSavedData;
+    </script>
+</body>
+</html>
+</antArt
